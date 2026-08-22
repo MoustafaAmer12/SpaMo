@@ -74,3 +74,4 @@ __pycache__
 venv/
 **.mp4
 data/**
+extracted_spatial_features/**

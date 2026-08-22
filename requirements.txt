@@ -1,4 +1,5 @@
 accelerate==1.4.0
+av
 datasets==3.4.1
 einops==0.8.1
 einops-exts==0.0.4

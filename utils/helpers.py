@@ -3,7 +3,7 @@ import importlib
 import random
 import os
 import glob
-
+import av
 
 def derangement(lst):
     assert len(lst) > 1, "List must have at least two elements."
@@ -78,46 +78,67 @@ def get_img_list(ds_name, vid_root, path):
         raise ValueError(f"Dataset {ds_name} is not supported.")
     return sorted(glob.glob(img_path))
 
-
 # Credit by https://stackoverflow.com/questions/77782599/how-can-i-extract-all-the-frames-from-a-particular-time-interval-in-a-video
-def read_video(fname, start_time=None, end_time=None):
+def read_video(fname, start_time=None, end_time=None, target_fps=20):
     """
-    Extracts frames from a video, optionally bounded by start and end times.
+    Extracts frames from a video, optionally bounded by start and end times, 
+    resampled to a target FPS.
 
     Args:
-        video_path (str): Path to the video file.
+        fname (str): Path to the video file.
         start_time (float or None): Start time in seconds, or None to start from the beginning.
         end_time (float or None): End time in seconds, or None to go until the end of the video.
+        target_fps (int): The desired frames per second to extract.
 
     Returns:
-        list: A list of frames extracted from the specified time range.
+        list: A list of frames extracted from the specified time range at the target FPS.
     """
     try:
         container = av.open(fname)
-        duration = container.duration * (1 / av.time_base)
+        stream = container.streams.video[0]
+        
+        duration = container.duration * (1 / av.time_base) if container.duration else float('inf')
+        
         if start_time is None:
-            start_time = 0
+            start_time = 0.0
         if end_time is None:
             end_time = duration
+            
         if start_time >= end_time:
             print("Start time must be less than end time")
             return []
-        if end_time > duration:
-            print("End time exceeds video duration")
-            return []
-        stream = container.streams.video[0]
+            
+        # Seek to the closest keyframe before start_time for efficiency
         container.seek(int(start_time / stream.time_base), stream=stream)
+        
         frames = []
+        target_interval = 1.0 / target_fps
+        next_target_time = start_time
+        
         for frame in container.decode(stream):
-            if frame.time > end_time:
+            current_time = frame.time
+            
+            # Stop if we've passed the end time
+            if current_time > end_time:
                 break
-            elif frame.time < start_time:
+                
+            # Skip frames before the start time
+            if current_time < start_time:
                 continue
-            else:
+                
+            # If the current frame's timestamp reaches or exceeds our next target, keep it
+            if current_time >= next_target_time:
                 frames.append(frame.to_image())
+                
+                # Advance the target time by the interval. 
+                # (Using a while loop handles cases where native FPS is lower than target FPS)
+                while next_target_time <= current_time:
+                    next_target_time += target_interval
+                    
         return frames
+        
     except Exception as e:
-        print(e)
+        print(f"Error reading {fname}: {e}")
         return []
 
 

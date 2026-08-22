@@ -107,11 +107,15 @@ def get_iterator(args, mode):
                 yield np.concatenate(video_feats, axis=0), data[i]['fileid'], None
             
             else:
+                st = None
+
                 if ds_name == 'How2Sign':
                     start_time, end_time = data[i]['original_info']['START_REALIGNED'], data[i]['original_info']['END_REALIGNED']
                     videos = read_video(fname, start_time=start_time, end_time=end_time)
+                    st = str(start_time)
                 else: 
-                    videos = read_video(fname)
+                    video_path = osp.join(args.video_root, fname) if not osp.isabs(fname) else fname
+                    videos = read_video(video_path)
 
                 if len(videos) > 0:
                     video_feats = []
@@ -119,9 +123,9 @@ def get_iterator(args, mode):
                         video_batch = videos[j:min(j + batch_size, len(videos))]
                         feats = reader.get_feats(video_batch).cpu().numpy()
                         video_feats.append(feats)
-                    yield np.concatenate(video_feats, axis=0), data[i]['fileid'], str(start_time)
+                    yield np.concatenate(video_feats, axis=0), data[i]['fileid'], st
                 else:
-                    yield [], data[i]['fileid'], str(start_time)
+                    yield [], data[i]['fileid'], st
     
     return iterate, num
 

@@ -110,7 +110,9 @@ def get_iterator(args, mode):
                 if ds_name == 'How2Sign':
                     start_time, end_time = data[i]['original_info']['START_REALIGNED'], data[i]['original_info']['END_REALIGNED']
                     videos = read_video(fname, start_time=start_time, end_time=end_time)
-            
+                else: 
+                    videos = read_video(fname)
+
                 if len(videos) > 0:
                     video_feats = []
                     for j in range(0, len(videos), batch_size):

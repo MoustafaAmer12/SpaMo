@@ -85,6 +85,18 @@ python scripts/mae_extract_feature.py \
     --device cuda:0
 ```
 
+```
+python scripts/mae_extract_feature.py \
+    --anno_root ./preprocess/Egy-ArSLT-Subset-1 \
+    --video_root ./data/Egy-ArSLT-Subset-1 \
+    --save_dir ./extracted_motion_features \
+    --cache_dir ./.cache \
+    --model_name MCG-NJU/videomae-large \
+    --overlap_size 8 \
+    --batch_size 4 \
+    --device cuda:0
+```
+
 For convenience, you can download our pre-extracted features from [here](https://www.dropbox.com/scl/fo/vgbws4cftewpoc6kudoap/AOtWs7adP4AvK0iT7KkWaJk?rlkey=nf3wp64zenqx3t2z695ndzcy7&st=9ydialet&dl=0).
 
 ## Model Training and Evaluation

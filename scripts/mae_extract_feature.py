@@ -32,7 +32,7 @@ class VideoMAEFeatureReader(object):
         self.nth_layer = nth_layer
 
         self.image_processor = VideoMAEImageProcessor.from_pretrained(model_name, cache_dir=cache_dir)
-        self.model = VideoMAEModel.from_pretrained(model_name).to(self.device).eval()
+        self.model = VideoMAEModel.from_pretrained(model_name, cache_dir=cache_dir).to(self.device).eval()
         
     @torch.no_grad()
     def get_feats(self, video):
@@ -122,7 +122,28 @@ def get_iterator(args, mode):
                     
                     else:
                         yield [], data[i]['fileid'], str(start_time)
-    
+
+                else:
+                    video_path = osp.join(args.video_root, fname) if not osp.isabs(fname) else fname
+                    videos = read_video(video_path)
+
+                    if len(videos) > 0:
+                        if len(videos) < 16:
+                            videos.extend([videos[-1]] * (16 - len(videos)))
+
+                        videos = sliding_window_for_list(videos, window_size=16, overlap_size=args.overlap_size)
+
+                        video_feats = []
+                        for j in range(0, len(videos), batch_size):
+                            video_batch = videos[j:min(j + batch_size, len(videos))]
+                            feats = reader.get_feats(video_batch).cpu().numpy()
+                            video_feats.append(feats)
+
+                        yield np.concatenate(video_feats, axis=0), data[i]['fileid'], None
+
+                    else:
+                        yield [], data[i]['fileid'], None
+
     return iterate, num
 
 def main():
